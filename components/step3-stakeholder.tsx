@@ -1,6 +1,6 @@
 'use client'
 
-import { Info, ArrowRight, ShoppingCart, Leaf, Building2, Shield, RefreshCw, Loader2 } from 'lucide-react'
+import { Info, ArrowRight, ShoppingCart, Leaf, Building2, Shield, Zap, RefreshCw, Loader2 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import type { BusinessValueOutput, DealInput, ObjectionLabel, PredictionResponse, Stakeholder, StakeholderPrediction } from '@/lib/types'
 import { OBJECTION_LABELS, OBJECTION_TITLES } from '@/lib/types'
@@ -12,6 +12,7 @@ const STAKEHOLDER_ICONS: Record<Stakeholder, React.ElementType> = {
   Sustainability: Leaf,
   Management: Building2,
   Compliance: Shield,
+  Operations: Zap,
 }
 
 const EVIDENCE_MAP: Record<Stakeholder, string[]> = {
@@ -38,6 +39,12 @@ const EVIDENCE_MAP: Record<Stakeholder, string[]> = {
     'ISCC+ certification chain',
     'Audit trail documentation',
     'Regulatory timeline overview',
+  ],
+  Operations: [
+    'Production compatibility assessment',
+    'Supply chain integration plan',
+    'Technical qualification status',
+    'Delivery timeline and logistics roadmap',
   ],
 }
 
@@ -153,7 +160,7 @@ export function Step3Stakeholder({
       )
     : []
 
-  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'Management', 'Compliance']
+  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'Management', 'Compliance', 'Operations']
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -289,7 +296,9 @@ export function Step3Stakeholder({
                     ? `Sustainability stakeholders need quantified CO₂ reduction data and credible certification to meet Scope 3 commitments.`
                     : activeStakeholder === 'Management'
                     ? `Management will weigh strategic risk against competitive pressure. Focus on long-term value and risk mitigation.`
-                    : `Compliance teams need documented evidence of certification and audit-ready chain-of-custody for regulatory requirements.`}
+                    : activeStakeholder === 'Compliance'
+                    ? `Compliance teams need documented evidence of certification and audit-ready chain-of-custody for regulatory requirements.`
+                    : `Operations teams prioritize supply chain continuity, production compatibility, and delivery reliability. Technical qualification and timeline certainty are critical.`}
                 </p>
               </div>
             </div>

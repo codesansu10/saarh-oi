@@ -57,6 +57,15 @@ export const STAKEHOLDER_PROFILES: Record<Stakeholder, StakeholderProfile> = {
     technicalSensitivity: 0.7, // technical/documentary rigour
     urgencySensitivity: 0.9, // regulatory deadlines drive urgency
   },
+  Operations: {
+    costSensitivity: 0.5,
+    proofSensitivity: 0.4,
+    claimRiskSensitivity: 0.2,
+    strategicFocus: 0.3,
+    supplySensitivity: 0.95, // supply chain continuity is paramount
+    technicalSensitivity: 0.85, // production capability and process compatibility
+    urgencySensitivity: 0.75, // production ramp-up and delivery timelines
+  },
 }
 
 export function getStakeholderProfile(
