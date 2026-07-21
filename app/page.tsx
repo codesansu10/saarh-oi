@@ -25,7 +25,7 @@ import { AppShell, type AppStep } from '@/components/app-shell'
 import { Step1Calculator } from '@/components/step1-calculator'
 import { Step2Dashboard } from '@/components/step2-dashboard'
 import { Step3Stakeholder } from '@/components/step3-stakeholder'
-import { Step4Brief } from '@/components/step4-brief'
+import { Step4BriefDual } from '@/components/step4-brief-dual'
 
 function buildProvenance(deal: DealInput): Record<string, Provenance> {
   const prov: Record<string, Provenance> = {}
@@ -204,7 +204,7 @@ export default function Page() {
       )}
 
       {step === 4 && (
-        <Step4Brief
+        <Step4BriefDual
           deal={deal}
           output={output}
           prediction={prediction}

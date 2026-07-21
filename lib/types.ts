@@ -7,14 +7,14 @@ export type Stakeholder =
   | 'Sustainability'
   | 'Management'
   | 'Compliance'
-  | 'Operations'
+  | 'Product Owner'
 
 export const STAKEHOLDERS: Stakeholder[] = [
   'Procurement',
   'Sustainability',
   'Management',
   'Compliance',
-  'Operations',
+  'Product Owner',
 ]
 
 export type Industry =

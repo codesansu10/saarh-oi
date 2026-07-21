@@ -57,7 +57,7 @@ export const STAKEHOLDER_PROFILES: Record<Stakeholder, StakeholderProfile> = {
     technicalSensitivity: 0.7, // technical/documentary rigour
     urgencySensitivity: 0.9, // regulatory deadlines drive urgency
   },
-  Operations: {
+  'Product Owner': {
     costSensitivity: 0.5,
     proofSensitivity: 0.4,
     claimRiskSensitivity: 0.2,
