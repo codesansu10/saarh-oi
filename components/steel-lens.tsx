@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { BookOpen, ArrowRight, Edit } from 'lucide-react'
+import { ChevronDown, AlertCircle, ArrowRight, Users } from 'lucide-react'
 import {
   INDUSTRIES,
   MATERIAL_TYPES,
@@ -53,385 +53,443 @@ export function SteelLens({
   onNext,
 }: {
   deal: DealInput
-  onChange: (patch: Partial<DealInput>) => void
+  onChange: (field: keyof DealInput, value: any) => void
   errors: ValidationErrors
   onCalculate: () => void
-  output: BusinessValueOutput | null
+  output?: BusinessValueOutput
   valid: boolean
   onNext: () => void
 }) {
-  const num = (field: NumericField) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value
-    onChange({ [field]: v === '' ? 0 : Number(v) } as Partial<DealInput>)
+  const handleNumericChange = (field: NumericField, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    onChange(field, val === '' ? '' : parseFloat(val))
   }
 
-  const greenPremiumTotal = deal.annualSteelVolumeTonnes * deal.greenPremiumPerTonne
-
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-white">
+    <div className="flex flex-col h-full w-full bg-white overflow-auto">
       {/* Header */}
-      <div className="border-b border-border px-6 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-base font-semibold text-foreground">SteelLens</h1>
-          <p className="text-xs text-muted-foreground">Calculate and analyze green steel business value in real-time</p>
-        </div>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground hover:border-[var(--brand-green)]/50 transition-colors"
-        >
-          <BookOpen className="size-3.5" aria-hidden />
-          Saved Deals
-        </button>
+      <div className="border-b border-border px-6 py-4 bg-gradient-to-r from-[var(--brand-green-soft)] to-white">
+        <h1 className="text-2xl font-bold text-foreground">SteelLens</h1>
+        <p className="text-sm text-muted-foreground">Green steel business value calculator & impact dashboard</p>
       </div>
 
-      {/* Main content - Compact Grid */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-4 gap-3 p-4">
-          {/* Left Column: Customer & Deal Information */}
-          <div className="space-y-2">
-            <SectionLabel>Customer & Deal</SectionLabel>
-            
-            <div>
-              <Label htmlFor="company">Company</Label>
-              <input
-                id="company"
-                type="text"
-                value={deal.companyName}
-                onChange={(e) => onChange({ companyName: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="industry">Industry</Label>
-              <select
-                id="industry"
-                value={deal.industry}
-                onChange={(e) => onChange({ industry: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Select...</option>
-                {INDUSTRIES.map((ind) => (
-                  <option key={ind} value={ind}>
-                    {ind}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="materialType">Material Type</Label>
-              <select
-                id="materialType"
-                value={deal.materialType}
-                onChange={(e) => onChange({ materialType: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Select...</option>
-                {MATERIAL_TYPES.map((mt) => (
-                  <option key={mt} value={mt}>
-                    {mt}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="product">Product / Application</Label>
-              <input
-                id="product"
-                type="text"
-                value={deal.productDescription}
-                onChange={(e) => onChange({ productDescription: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="dealId">Deal ID (Optional)</Label>
-              <input
-                id="dealId"
-                type="text"
-                value={deal.dealId}
-                onChange={(e) => onChange({ dealId: e.target.value })}
-                className={inputCls}
-              />
-            </div>
-
-            <SectionLabel>Proof & Supply</SectionLabel>
-
-            <div>
-              <Label htmlFor="pcfAvailable">PCF Available</Label>
-              <select
-                id="pcfAvailable"
-                value={deal.pcfAvailable ? 'true' : 'false'}
-                onChange={(e) => onChange({ pcfAvailable: e.target.value === 'true' })}
-                className={selectCls}
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="certification">Certification</Label>
-              <select
-                id="certification"
-                value={deal.certificationStatus}
-                onChange={(e) => onChange({ certificationStatus: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Select...</option>
-                {CERTIFICATION_STATUSES.map((cs) => (
-                  <option key={cs} value={cs}>
-                    {cs}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="supplyReliability">Supply Reliability</Label>
-              <select
-                id="supplyReliability"
-                value={deal.supplyReliability}
-                onChange={(e) => onChange({ supplyReliability: e.target.value })}
-                className={selectCls}
-              >
-                <option value="">Select...</option>
-                {SUPPLY_RELIABILITY.map((sr) => (
-                  <option key={sr} value={sr}>
-                    {sr}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
+      {/* Main Content: Side-by-side Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT COLUMN: INPUTS */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 border-r border-border">
+          {/* Customer & Deal Information */}
+          <div className="mb-5">
+            <SectionLabel>Customer & Deal Information</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="itemsAvailable">Items Available</Label>
+                <Label htmlFor="company">Company</Label>
                 <input
-                  id="itemsAvailable"
-                  type="number"
-                  value={deal.proofItemsAvailable}
-                  onChange={num('proofItemsAvailable')}
+                  id="company"
+                  type="text"
+                  value={deal.companyName}
+                  onChange={(e) => onChange('companyName', e.target.value)}
                   className={inputCls}
+                  placeholder="e.g., Mercedes-Benz"
                 />
               </div>
               <div>
-                <Label htmlFor="itemsRequired">Items Required</Label>
+                <Label htmlFor="industry">Industry</Label>
+                <select
+                  id="industry"
+                  value={deal.industry}
+                  onChange={(e) => onChange('industry', e.target.value)}
+                  className={selectCls}
+                >
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind} value={ind}>
+                      {ind}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="material">Material Type</Label>
+                <select
+                  id="material"
+                  value={deal.materialType}
+                  onChange={(e) => onChange('materialType', e.target.value)}
+                  className={selectCls}
+                >
+                  {MATERIAL_TYPES.map((mt) => (
+                    <option key={mt} value={mt}>
+                      {mt}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="product">Product / Application</Label>
                 <input
-                  id="itemsRequired"
-                  type="number"
-                  value={deal.proofItemsRequired}
-                  onChange={num('proofItemsRequired')}
+                  id="product"
+                  type="text"
+                  value={deal.productApplication}
+                  onChange={(e) => onChange('productApplication', e.target.value)}
                   className={inputCls}
+                  placeholder="e.g., EV Chassis - Springs"
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Salesperson Notes</Label>
-              <textarea
-                id="notes"
-                value={deal.notes}
-                onChange={(e) => onChange({ notes: e.target.value })}
-                className={`${inputCls} h-16 resize-none`}
-              />
+              <div>
+                <Label htmlFor="dealId">Deal ID (Optional)</Label>
+                <input
+                  id="dealId"
+                  type="text"
+                  value={deal.dealId}
+                  onChange={(e) => onChange('dealId', e.target.value)}
+                  className={inputCls}
+                  placeholder="e.g., D001"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Middle Columns: Deal Inputs */}
-          <div className="col-span-2 space-y-2">
-            <SectionLabel>Deal Inputs</SectionLabel>
-
-            <div className="grid grid-cols-3 gap-2">
+          {/* Proof & Supply Information */}
+          <div className="mb-5">
+            <SectionLabel>Proof & Supply Information</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="volume">Annual Steel Volume</Label>
+                <Label htmlFor="pcf">PCF Available</Label>
+                <select
+                  id="pcf"
+                  value={deal.pcfAvailable ? 'Yes' : 'No'}
+                  onChange={(e) => onChange('pcfAvailable', e.target.value === 'Yes')}
+                  className={selectCls}
+                >
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="cert">Certification</Label>
+                <select
+                  id="cert"
+                  value={deal.certificationStatus}
+                  onChange={(e) => onChange('certificationStatus', e.target.value)}
+                  className={selectCls}
+                >
+                  {CERTIFICATION_STATUSES.map((cs) => (
+                    <option key={cs} value={cs}>
+                      {cs}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="supply">Supply Reliability</Label>
+                <select
+                  id="supply"
+                  value={deal.supplyReliability}
+                  onChange={(e) => onChange('supplyReliability', e.target.value)}
+                  className={selectCls}
+                >
+                  {SUPPLY_RELIABILITY.map((sr) => (
+                    <option key={sr} value={sr}>
+                      {sr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="available">Items Available</Label>
+                <input
+                  id="available"
+                  type="number"
+                  value={deal.proofItemsAvailable}
+                  onChange={(e) => handleNumericChange('proofItemsAvailable', e)}
+                  className={inputCls}
+                  min="0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="required">Items Required</Label>
+                <input
+                  id="required"
+                  type="number"
+                  value={deal.proofItemsRequired}
+                  onChange={(e) => handleNumericChange('proofItemsRequired', e)}
+                  className={inputCls}
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Deal Inputs */}
+          <div className="mb-5">
+            <SectionLabel>Deal Inputs</SectionLabel>
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              <div>
+                <Label htmlFor="volume">Annual Steel Volume (t)</Label>
                 <input
                   id="volume"
                   type="number"
                   value={deal.annualSteelVolumeTonnes}
-                  onChange={num('annualSteelVolumeTonnes')}
+                  onChange={(e) => handleNumericChange('annualSteelVolumeTonnes', e)}
                   className={inputCls}
+                  min="0"
+                  step="1000"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">Tonnes</p>
               </div>
-
               <div>
-                <Label htmlFor="conventionalPrice">Conventional Price</Label>
+                <Label htmlFor="convPrice">Conventional Price (€/t)</Label>
                 <input
-                  id="conventionalPrice"
+                  id="convPrice"
                   type="number"
                   value={deal.conventionalSteelPricePerTonne}
-                  onChange={num('conventionalSteelPricePerTonne')}
+                  onChange={(e) => handleNumericChange('conventionalSteelPricePerTonne', e)}
                   className={inputCls}
+                  min="0"
+                  step="10"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">€/t</p>
               </div>
-
               <div>
-                <Label htmlFor="greenPremium">Green Premium</Label>
+                <Label htmlFor="greenPrem">Green Premium (€/t)</Label>
                 <input
-                  id="greenPremium"
+                  id="greenPrem"
                   type="number"
                   value={deal.greenPremiumPerTonne}
-                  onChange={num('greenPremiumPerTonne')}
+                  onChange={(e) => handleNumericChange('greenPremiumPerTonne', e)}
                   className={inputCls}
+                  min="0"
+                  step="5"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">€/t</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div>
-                <Label htmlFor="baselineCo2">Baseline CO₂</Label>
+                <Label htmlFor="baseCo2">Baseline CO₂ (t/t steel)</Label>
                 <input
-                  id="baselineCo2"
+                  id="baseCo2"
                   type="number"
                   value={deal.baselineCo2Intensity}
-                  onChange={num('baselineCo2Intensity')}
-                  step="0.01"
+                  onChange={(e) => handleNumericChange('baselineCo2Intensity', e)}
                   className={inputCls}
+                  min="0"
+                  step="0.1"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">tCO₂/t</p>
               </div>
-
               <div>
-                <Label htmlFor="greenCo2">Green Steel CO₂</Label>
+                <Label htmlFor="greenCo2">Green Steel CO₂ (t/t steel)</Label>
                 <input
                   id="greenCo2"
                   type="number"
                   value={deal.greenSteelCo2Intensity}
-                  onChange={num('greenSteelCo2Intensity')}
-                  step="0.01"
+                  onChange={(e) => handleNumericChange('greenSteelCo2Intensity', e)}
                   className={inputCls}
+                  min="0"
+                  step="0.1"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">tCO₂/t</p>
               </div>
-
               <div>
-                <Label htmlFor="productUnits">Product Units/y</Label>
+                <Label htmlFor="units">Product Units/y</Label>
                 <input
-                  id="productUnits"
+                  id="units"
                   type="number"
                   value={deal.productUnits}
-                  onChange={num('productUnits')}
+                  onChange={(e) => handleNumericChange('productUnits', e)}
                   className={inputCls}
+                  min="0"
+                  step="1000"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">Units</p>
               </div>
             </div>
+          </div>
 
+          {/* Carbon Price Assumption */}
+          <div className="mb-6">
             <SectionLabel>Carbon Price Assumption</SectionLabel>
-
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="carbonPrice">Carbon Price</Label>
+                <Label htmlFor="carbonPrice">Carbon Price (€/t CO₂)</Label>
                 <input
                   id="carbonPrice"
                   type="number"
                   value={deal.carbonPrice}
-                  onChange={num('carbonPrice')}
+                  onChange={(e) => handleNumericChange('carbonPrice', e)}
                   className={inputCls}
+                  min="0"
+                  step="5"
                 />
-                <p className="text-xs text-muted-foreground mt-0.5">€/t</p>
               </div>
-
               <div>
-                <Label htmlFor="carbonAssumption">Source / Assumption</Label>
+                <Label htmlFor="source">Source / Assumption</Label>
                 <input
-                  id="carbonAssumption"
+                  id="source"
                   type="text"
-                  value={deal.carbonAssumption}
-                  onChange={(e) => onChange({ carbonAssumption: e.target.value })}
+                  value={deal.carbonPriceSource}
+                  onChange={(e) => onChange('carbonPriceSource', e.target.value)}
                   className={inputCls}
-                  placeholder="e.g., EU ETS assumption"
+                  placeholder="e.g., Illustrative EU ETS assumption"
                 />
               </div>
             </div>
           </div>
 
-          {/* Right Column: Financial Summary & Results */}
-          <div className="space-y-2">
-            <SectionLabel>Financial Summary</SectionLabel>
+          {/* Error Messages */}
+          {Object.keys(errors).length > 0 && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="size-4 shrink-0 text-red-600 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium text-red-900 mb-1">Please fix the following:</p>
+                  <ul className="text-xs text-red-800 space-y-0.5">
+                    {Object.entries(errors).map(([field, message]) => (
+                      <li key={field}>• {message}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* Action Buttons */}
+          <div className="flex gap-2 pb-4">
+            <button
+              onClick={onCalculate}
+              disabled={!valid}
+              className="flex-1 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Calculate & Analyze
+            </button>
             {output && (
-              <>
-                <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-                  <p className="text-xs text-muted-foreground">Product Price Impact</p>
-                  <p className="text-sm font-bold text-green-700 font-mono">
-                    {fmtPercent(output.priceImpactPercent)}
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                  <p className="text-xs text-muted-foreground">Material-Level Premium</p>
-                  <p className="text-sm font-bold text-blue-700 font-mono">
-                    {fmtCurrency(greenPremiumTotal)}
-                  </p>
-                </div>
-
-                <div className="border-t pt-2">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Conventional Contract</p>
-                  <p className="text-sm font-mono font-bold text-foreground">
-                    {fmtCurrency(output.conventionalContractValue)}
-                  </p>
-                </div>
-
-                <div className="border-t pt-2">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Green Steel Contract</p>
-                  <p className="text-sm font-mono font-bold text-green-700">
-                    {fmtCurrency(output.greenSteelContractValue)}
-                  </p>
-                </div>
-
-                <div className="border-t pt-2">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Indicative Carbon Value</p>
-                  <p className="text-sm font-mono font-bold text-foreground">
-                    {fmtCurrency(output.indicativeCarbonValue)}
-                  </p>
-                </div>
-
-                <div className="bg-green-50 border border-green-200 rounded-lg p-2 mt-2">
-                  <p className="text-xs text-muted-foreground">CO₂ Reduction</p>
-                  <p className="text-sm font-bold text-green-700 font-mono">
-                    {fmtInt(output.co2Saved)} t/year
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {fmtPercent(output.co2ReductionPercent)} vs baseline
-                  </p>
-                </div>
-              </>
+              <button
+                onClick={onNext}
+                className="flex-1 rounded-lg border border-[var(--brand-green)] bg-white px-4 py-2 text-sm font-medium text-[var(--brand-green)] hover:bg-[var(--brand-green-soft)] transition-colors flex items-center justify-center gap-2"
+              >
+                View Analysis <ArrowRight className="size-4" />
+              </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Footer - Action Buttons */}
-      <div className="border-t border-border bg-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCalculate}
-            disabled={!valid}
-            className="flex items-center gap-1.5 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Calculate
-            <ArrowRight className="size-4" aria-hidden />
-          </button>
+        {/* RIGHT COLUMN: OUTPUTS */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 bg-gradient-to-b from-[var(--brand-green-soft)] to-white">
+          {output ? (
+            <>
+              <h2 className="text-lg font-bold text-foreground mb-4">Business Impact Summary</h2>
+
+              {/* Financial Summary */}
+              <div className="mb-5 bg-white rounded-lg border border-border p-4">
+                <SectionLabel>Financial Summary</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Premium %</p>
+                    <p className="text-lg font-bold text-blue-700">
+                      {output.premiumPercentage !== undefined && !isNaN(output.premiumPercentage)
+                        ? fmtPercent(output.premiumPercentage / 100)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Premium per Product</p>
+                    <p className="text-lg font-bold text-green-700">
+                      {output.premiumPerProduct !== undefined && !isNaN(output.premiumPerProduct)
+                        ? fmtCurrency(output.premiumPerProduct)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 p-3 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Conventional Contract</p>
+                    <p className="text-lg font-bold text-amber-700">
+                      {output.conventionalContractValue !== undefined && !isNaN(output.conventionalContractValue)
+                        ? fmtCurrency(output.conventionalContractValue)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Green Steel Contract</p>
+                    <p className="text-lg font-bold text-[var(--brand-green-dark)]">
+                      {output.greenSteelContractValue !== undefined && !isNaN(output.greenSteelContractValue)
+                        ? fmtCurrency(output.greenSteelContractValue)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carbon Impact */}
+              <div className="mb-5 bg-white rounded-lg border border-border p-4">
+                <SectionLabel>Carbon Impact</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">CO₂ Saved Annually</p>
+                    <p className="text-xl font-bold text-[var(--brand-green)]">
+                      {output.co2Saved !== undefined && !isNaN(output.co2Saved)
+                        ? fmtInt(output.co2Saved)
+                        : 'N/A'}{' '}
+                      <span className="text-xs font-normal">t CO₂</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Green Steel Price</p>
+                    <p className="text-xl font-bold text-[var(--brand-green)]">
+                      {output.greenSteelPricePerTonne !== undefined && !isNaN(output.greenSteelPricePerTonne)
+                        ? fmtCurrency(output.greenSteelPricePerTonne)
+                        : 'N/A'}{' '}
+                      <span className="text-xs font-normal">€/t</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Carbon Value */}
+              <div className="mb-5 bg-white rounded-lg border border-border p-4">
+                <SectionLabel>Carbon Value</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Indicative Carbon Value</p>
+                    <p className="text-lg font-bold text-purple-700">
+                      {output.indicativeCarbonValue !== undefined && !isNaN(output.indicativeCarbonValue)
+                        ? fmtCurrency(output.indicativeCarbonValue)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Total Premium</p>
+                    <p className="text-lg font-bold text-amber-700">
+                      {output.totalPremium !== undefined && !isNaN(output.totalPremium)
+                        ? fmtCurrency(output.totalPremium)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Supply & Proof Metrics */}
+              <div className="bg-white rounded-lg border border-border p-4">
+                <SectionLabel>Deal Readiness</SectionLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Proof Score</p>
+                    <p className="text-lg font-bold text-blue-700">
+                      {output.proofScore !== undefined && !isNaN(output.proofScore)
+                        ? fmtPercent(output.proofScore / 100)
+                        : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Supply Risk</p>
+                    <p className="text-lg font-bold text-red-700">
+                      {output.supplyRisk || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-center">
+              <div>
+                <p className="text-lg font-semibold text-muted-foreground mb-2">No Analysis Yet</p>
+                <p className="text-sm text-muted-foreground">Click "Calculate & Analyze" to see the business impact</p>
+              </div>
+            </div>
+          )}
         </div>
-
-        {output && (
-          <button
-            type="button"
-            onClick={onNext}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--brand-green)] bg-white px-4 py-2 text-sm font-medium text-[var(--brand-green)] hover:bg-[var(--brand-green)]/5 transition-colors"
-          >
-            View Business Impact
-            <ArrowRight className="size-4" aria-hidden />
-          </button>
-        )}
       </div>
     </div>
   )
