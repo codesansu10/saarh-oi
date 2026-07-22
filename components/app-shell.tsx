@@ -63,8 +63,8 @@ export function AppShell({
                 }`}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                {label}
+                <Icon className="size-4 shrink-0 flex-none" aria-hidden />
+                <span className="text-left leading-tight">{label}</span>
               </button>
             )
           })}
