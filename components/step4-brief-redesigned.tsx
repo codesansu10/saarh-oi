@@ -132,11 +132,15 @@ function AllStakeholdersOverview({
             const colors = STAKEHOLDER_COLORS[sh]
 
             return (
-              <div key={sh} className={`rounded-lg border ${colors.border} ${colors.bg} p-4`}>
+              <button
+                key={sh}
+                onClick={() => onSelectStakeholder(sh, 'internal')}
+                className={`w-full rounded-lg border ${colors.border} ${colors.bg} p-4 transition hover:shadow-md hover:opacity-90`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Icon className={`size-5 ${colors.text}`} />
-                    <div>
+                    <div className="text-left">
                       <p className={`font-semibold ${colors.text}`}>{sh}</p>
                       <p className="text-xs text-muted-foreground">
                         {pred ? `${Object.keys(pred.probabilities).length} barriers identified` : 'No data'}
@@ -153,30 +157,18 @@ function AllStakeholdersOverview({
                     <ChevronRight className="size-5 text-muted-foreground" />
                   </div>
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* Instructions */}
       <div className="border-t border-border pt-6">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-foreground">Choose how to view the brief:</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => onSelectStakeholder('Procurement', 'internal')}
-              className="rounded-lg border-2 border-blue-500 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900 hover:bg-blue-100"
-            >
-              <FileText className="mb-1 inline size-4" /> Internal Sales Brief
-            </button>
-            <button
-              onClick={() => onSelectStakeholder('Procurement', 'customer')}
-              className="rounded-lg border-2 border-[var(--brand-green)] bg-[var(--brand-green)]/10 px-4 py-3 text-sm font-semibold text-[var(--brand-green)] hover:bg-[var(--brand-green)]/20"
-            >
-              <BarChart3 className="mb-1 inline size-4" /> Customer Presentation
-            </button>
-          </div>
+        <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <p className="text-sm text-blue-900">
+            <strong>Click on any stakeholder card</strong> to view their detailed brief. You can switch between Internal Sales Brief and Customer Presentation for each stakeholder.
+          </p>
         </div>
       </div>
     </div>
@@ -369,28 +361,120 @@ function CustomerPresentationView({
         </div>
       </div>
 
-      {/* Why This Matters */}
-      <div className="rounded-lg border border-border bg-white p-6">
+      {/* Why This Matters - Stakeholder Specific */}
+      <div className="rounded-lg border border-[var(--brand-green)] bg-[var(--brand-green)]/5 p-6">
         <h2 className="text-lg font-bold text-foreground mb-4">Why This Matters for {activeStakeholder}</h2>
         <div className="grid grid-cols-2 gap-4">
-          <div className="flex gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-              <ShoppingCart className="size-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">Cost Transparency</p>
-              <p className="text-xs text-muted-foreground">Full visibility on total cost of ownership and pricing stability</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100">
-              <Leaf className="size-4 text-green-600" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">Measurable Impact</p>
-              <p className="text-xs text-muted-foreground">Significant CO₂ reduction supporting sustainability goals</p>
-            </div>
-          </div>
+          {activeStakeholder === 'Procurement' && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                  <ShoppingCart className="size-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Cost Transparency</p>
+                  <p className="text-xs text-muted-foreground">Full visibility on total cost of ownership with predictable pricing</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                  <Building2 className="size-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Supply Reliability</p>
+                  <p className="text-xs text-muted-foreground">Secured long-term volumes with backup options</p>
+                </div>
+              </div>
+            </>
+          )}
+          {activeStakeholder === 'Sustainability' && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100">
+                  <Leaf className="size-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Measurable CO₂ Impact</p>
+                  <p className="text-xs text-muted-foreground">Significant emissions reduction supporting Scope 3 targets</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-100">
+                  <Shield className="size-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Certified Credentials</p>
+                  <p className="text-xs text-muted-foreground">ISCC+ certification provides audit-ready evidence</p>
+                </div>
+              </div>
+            </>
+          )}
+          {activeStakeholder === 'Management' && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                  <BarChart3 className="size-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Strategic Business Case</p>
+                  <p className="text-xs text-muted-foreground">Clear ROI with long-term competitive advantage</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100">
+                  <Leaf className="size-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">ESG & Compliance</p>
+                  <p className="text-xs text-muted-foreground">Meets regulatory requirements and ESG commitments</p>
+                </div>
+              </div>
+            </>
+          )}
+          {activeStakeholder === 'Compliance' && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100">
+                  <Shield className="size-4 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Regulatory Compliance</p>
+                  <p className="text-xs text-muted-foreground">CBAM-ready and fully documented chain of custody</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                  <FileText className="size-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Audit-Ready Evidence</p>
+                  <p className="text-xs text-muted-foreground">Complete PCF methodology and certification documentation</p>
+                </div>
+              </div>
+            </>
+          )}
+          {activeStakeholder === 'Product Owner' && (
+            <>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-100">
+                  <Zap className="size-4 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Technical Qualification</p>
+                  <p className="text-xs text-muted-foreground">Proven performance equivalence with seamless integration</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-100">
+                  <Leaf className="size-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Reliable Supply</p>
+                  <p className="text-xs text-muted-foreground">Secured volumes and delivery timeline with backup plans</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
