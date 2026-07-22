@@ -22,10 +22,9 @@ import { buildCaseExport, downloadJson, slugify } from '@/lib/export'
 import type { BriefResult } from '@/lib/brief-schema'
 
 import { AppShell, type AppStep } from '@/components/app-shell'
-import { Step1Calculator } from '@/components/step1-calculator'
-import { Step2Dashboard } from '@/components/step2-dashboard'
+import { SteelLens } from '@/components/steel-lens'
 import { Step3Stakeholder } from '@/components/step3-stakeholder'
-import { Step4BriefDual } from '@/components/step4-brief-dual'
+import { Step4BriefRedesigned } from '@/components/step4-brief-redesigned'
 
 function buildProvenance(deal: DealInput): Record<string, Provenance> {
   const prov: Record<string, Provenance> = {}
@@ -165,21 +164,14 @@ export default function Page() {
       canStep3={valid}
       canStep4={!!prediction}
     >
-      {step === 1 && (
-        <Step1Calculator
+      {(step === 1 || step === 2) && (
+        <SteelLens
           deal={deal}
           onChange={onChange}
           errors={errors}
           onCalculate={() => setStep(2)}
-          valid={valid}
-        />
-      )}
-
-      {step === 2 && (
-        <Step2Dashboard
-          deal={deal}
           output={output}
-          onEditInputs={() => setStep(1)}
+          valid={valid}
           onNext={() => {
             setStep(3)
             if (valid && !prediction && !predLoading) void runPrediction()
@@ -204,7 +196,7 @@ export default function Page() {
       )}
 
       {step === 4 && (
-        <Step4BriefDual
+        <Step4BriefRedesigned
           deal={deal}
           output={output}
           prediction={prediction}
