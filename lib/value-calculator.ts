@@ -47,6 +47,43 @@ export function calculateBusinessValue(deal: DealInput): BusinessValueOutput {
   // This is an illustrative modelled value, NOT a guaranteed saving.
   const indicativeCarbonValue = co2Saved * (carbonPrice?.value ?? 0)
 
+  // ---- Deal Readiness (composite 0..1) ----
+  // A transparent weighted score. Every sub-score is a fraction in [0,1],
+  // so each input below directly and logically moves the final KPI.
+  const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
+
+  // 1. Proof completeness (35%): how much of the required evidence exists.
+  const proofSubScore = clamp01(proofScore)
+
+  // 2. Certification maturity (25%): certified deals are audit-ready.
+  const certSubScore =
+    deal.certificationStatus === 'Certified'
+      ? 1
+      : deal.certificationStatus === 'In audit'
+        ? 0.6
+        : deal.certificationStatus === 'Pending'
+          ? 0.5
+          : 0.2 // 'Not started'
+
+  // 3. Supply reliability (20%): can we actually deliver at volume.
+  const supplySubScore =
+    deal.supplyReliability === 'High'
+      ? 1
+      : deal.supplyReliability === 'Medium'
+        ? 0.6
+        : 0.2 // 'Low'
+
+  // 4. Price competitiveness (20%): a smaller green premium is easier to
+  //    approve. A premium of 0% scores 1.0; a premium of >=30% scores 0.
+  const priceSubScore = clamp01(1 - premiumPercentage / 0.3)
+
+  const dealReadiness = clamp01(
+    0.35 * proofSubScore +
+      0.25 * certSubScore +
+      0.2 * supplySubScore +
+      0.2 * priceSubScore,
+  )
+
   return {
     totalPremium,
     premiumPerProduct,
@@ -58,6 +95,7 @@ export function calculateBusinessValue(deal: DealInput): BusinessValueOutput {
     greenSteelContractValue,
     greenSteelPricePerTonne,
     indicativeCarbonValue,
+    dealReadiness,
   }
 }
 

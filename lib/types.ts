@@ -5,15 +5,13 @@
 export type Stakeholder =
   | 'Procurement'
   | 'Sustainability'
-  | 'Management'
-  | 'Compliance'
+  | 'C-Management'
   | 'Product Owner'
 
 export const STAKEHOLDERS: Stakeholder[] = [
   'Procurement',
   'Sustainability',
-  'Management',
-  'Compliance',
+  'C-Management',
   'Product Owner',
 ]
 
@@ -151,6 +149,9 @@ export interface BusinessValueOutput {
   greenSteelContractValue: number
   greenSteelPricePerTonne: number
   indicativeCarbonValue: number
+  // Composite 0..1 readiness score combining proof, certification,
+  // supply reliability and price competitiveness.
+  dealReadiness: number
 }
 
 // ============================================================

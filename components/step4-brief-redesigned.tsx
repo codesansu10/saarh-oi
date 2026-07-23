@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AlertTriangle, Copy, Download, Loader2, RefreshCw, CheckCircle, XCircle, Eye, EyeOff, ChevronRight, ShoppingCart, Leaf, Building2, Shield, Zap, BarChart3, FileText, ArrowLeft } from 'lucide-react'
+import { AlertTriangle, Copy, Download, Loader2, RefreshCw, CheckCircle, XCircle, Eye, EyeOff, ChevronRight, ShoppingCart, Leaf, Building2, Zap, BarChart3, FileText, ArrowLeft } from 'lucide-react'
 import type { BusinessValueOutput, DealInput, PredictionResponse, Stakeholder } from '@/lib/types'
 import type { BriefResult, BriefItem } from '@/lib/brief-schema'
 import { fmtDecimal, fmtInt, fmtPercent, fmtCurrency } from '@/lib/value-calculator'
@@ -12,7 +12,6 @@ const STAKEHOLDER_ICONS: Record<Stakeholder, React.ElementType> = {
   Procurement: ShoppingCart,
   Sustainability: Leaf,
   Management: Building2,
-  Compliance: Shield,
   'Product Owner': Zap,
 }
 
@@ -20,7 +19,6 @@ const STAKEHOLDER_COLORS: Record<Stakeholder, { bg: string; border: string; text
   Procurement: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900' },
   Sustainability: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-900' },
   Management: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-900' },
-  Compliance: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-900' },
   'Product Owner': { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-900' },
 }
 
@@ -82,7 +80,7 @@ function AllStakeholdersOverview({
   prediction: PredictionResponse | null
   onSelectStakeholder: (s: Stakeholder, mode: 'internal' | 'customer') => void
 }) {
-  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'Management', 'Compliance', 'Product Owner']
+  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'C-Management', 'Compliance', 'Product Owner']
 
   return (
     <div className="space-y-6">
@@ -210,25 +208,13 @@ function InternalBriefView({
 
   const Icon = STAKEHOLDER_ICONS[activeStakeholder]
   const colors = STAKEHOLDER_COLORS[activeStakeholder]
-  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'Management', 'Compliance', 'Product Owner']
+  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'C-Management', 'Compliance', 'Product Owner']
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <div>
-          <button onClick={onBack} className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
-            <ArrowLeft className="size-4" /> Back to Overview
-          </button>
-          <h1 className="text-2xl font-bold text-foreground">Internal Sales Brief</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Conversation guide and objection handling</p>
-        </div>
-      </div>
-
-      {/* Stakeholder Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-border pb-4">
-        {stakeholders.map((sh) => (
-          <button
+    <div className="flex h-full flex-col overflow-hidden bg-white">
+      {/* Tabs */}
+      <div className="flex items-center gap-0.5 border-b border-border bg-surface-subtle px-6 py-0">
+        <button
             key={sh}
             onClick={() => onSelectStakeholder(sh)}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${

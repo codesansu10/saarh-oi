@@ -39,7 +39,7 @@ export const STAKEHOLDER_PROFILES: Record<Stakeholder, StakeholderProfile> = {
     technicalSensitivity: 0.4,
     urgencySensitivity: 0.7, // driven by ESG reporting cycles
   },
-  Management: {
+  'C-Management': {
     costSensitivity: 0.6,
     proofSensitivity: 0.5,
     claimRiskSensitivity: 0.5,
@@ -47,15 +47,6 @@ export const STAKEHOLDER_PROFILES: Record<Stakeholder, StakeholderProfile> = {
     supplySensitivity: 0.6,
     technicalSensitivity: 0.5,
     urgencySensitivity: 0.6,
-  },
-  Compliance: {
-    costSensitivity: 0.2,
-    proofSensitivity: 0.95,
-    claimRiskSensitivity: 0.95,
-    strategicFocus: 0.4,
-    supplySensitivity: 0.3,
-    technicalSensitivity: 0.7, // technical/documentary rigour
-    urgencySensitivity: 0.9, // regulatory deadlines drive urgency
   },
   'Product Owner': {
     costSensitivity: 0.5,
