@@ -23,7 +23,7 @@ const getScoreBgColor = (score: number): string => {
 export function Step3DisplayPredictions({ predictions, onNext, onBack }: DisplayPredictionsProps) {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Stakeholder Predictions</h2>
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Stakeholder Analysis</h2>
 
       <div className="space-y-6">
         {predictions.map((pred, idx) => (

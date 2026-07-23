@@ -1,6 +1,6 @@
 'use client'
 
-import { Info, ArrowRight, ShoppingCart, Leaf, Building2, Shield, Zap, RefreshCw, Loader2 } from 'lucide-react'
+import { Info, ArrowRight, ShoppingCart, Leaf, Building2, Zap, RefreshCw, Loader2 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import type { BusinessValueOutput, DealInput, ObjectionLabel, PredictionResponse, Stakeholder, StakeholderPrediction } from '@/lib/types'
 import { OBJECTION_LABELS, OBJECTION_TITLES } from '@/lib/types'
@@ -10,8 +10,7 @@ import { riskBadgeClasses } from '@/lib/risk-level'
 const STAKEHOLDER_ICONS: Record<Stakeholder, React.ElementType> = {
   Procurement: ShoppingCart,
   Sustainability: Leaf,
-  Management: Building2,
-  Compliance: Shield,
+  'C-Management': Building2,
   'Product Owner': Zap,
 }
 
@@ -28,17 +27,11 @@ const EVIDENCE_MAP: Record<Stakeholder, string[]> = {
     'Certification status (ISCC+)',
     'Science-based targets alignment',
   ],
-  Management: [
+  'C-Management': [
     'Financial business case summary',
     'Risk & supply reliability overview',
     'Competitor benchmarking',
     'Regulatory deadline map',
-  ],
-  Compliance: [
-    'CBAM exposure calculation',
-    'ISCC+ certification chain',
-    'Audit trail documentation',
-    'Regulatory timeline overview',
   ],
   'Product Owner': [
     'Production compatibility assessment',
@@ -160,7 +153,7 @@ export function Step3Stakeholder({
       )
     : []
 
-  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'Management', 'Compliance', 'Product Owner']
+  const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'C-Management', 'Product Owner']
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -294,10 +287,8 @@ export function Step3Stakeholder({
                     ? `The premium is a significant factor for Procurement. They focus on total cost of ownership and reliable supply.`
                     : activeStakeholder === 'Sustainability'
                     ? `Sustainability stakeholders need quantified CO₂ reduction data and credible certification to meet Scope 3 commitments.`
-                    : activeStakeholder === 'Management'
-                    ? `Management will weigh strategic risk against competitive pressure. Focus on long-term value and risk mitigation.`
-                    : activeStakeholder === 'Compliance'
-                    ? `Compliance teams need documented evidence of certification and audit-ready chain-of-custody for regulatory requirements.`
+                    : activeStakeholder === 'C-Management'
+                    ? `C-Management will weigh strategic risk against competitive pressure. Focus on long-term value and risk mitigation.`
                     : `Product Owners prioritize supply chain continuity, production compatibility, and delivery reliability. Technical qualification and timeline certainty are critical.`}
                 </p>
               </div>

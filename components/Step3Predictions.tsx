@@ -116,7 +116,7 @@ export function Step3Predictions({ deal, onNext, onBack }: Step3Props) {
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Step 3: Stakeholder Predictions</h2>
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Step 3: Stakeholder Analysis</h2>
       <p className="text-slate-600 dark:text-slate-400 mb-6">
         Analyzing objections and predicting acceptance from 4 key stakeholder groups based on your deal parameters.
       </p>

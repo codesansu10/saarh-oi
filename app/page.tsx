@@ -24,6 +24,7 @@ import type { BriefResult } from '@/lib/brief-schema'
 import { AppShell, type AppStep } from '@/components/app-shell'
 import { SteelLens } from '@/components/steel-lens'
 import { Step3Stakeholder } from '@/components/step3-stakeholder'
+import { SalesBriefDualView } from '@/components/sales-brief-dual-view'
 import { Step4BriefRedesigned } from '@/components/step4-brief-redesigned'
 
 function buildProvenance(deal: DealInput): Record<string, Provenance> {
@@ -49,6 +50,7 @@ export default function Page() {
     useState<Stakeholder>('Procurement')
 
   const [brief, setBrief] = useState<BriefResult | null>(null)
+  const [allBriefs, setAllBriefs] = useState<BriefResult[]>([])
   const [briefLoading, setBriefLoading] = useState(false)
   const [briefError, setBriefError] = useState<string | null>(null)
 
@@ -107,6 +109,27 @@ export default function Page() {
     [deal, output, prediction],
   )
 
+  const runAllBriefs = useCallback(
+    async () => {
+      if (!output || !prediction) return
+      setBriefLoading(true)
+      setBriefError(null)
+      try {
+        const briefs: BriefResult[] = []
+        for (const pred of prediction.predictions) {
+          const res = await fetchBrief(deal, output, pred, pred.stakeholder)
+          briefs.push(res)
+        }
+        setAllBriefs(briefs)
+      } catch (e) {
+        setBriefError(e instanceof Error ? e.message : 'Brief failed')
+      } finally {
+        setBriefLoading(false)
+      }
+    },
+    [deal, output, prediction],
+  )
+
   // Auto-fetch prediction when arriving at step 3 without one.
   useEffect(() => {
     if (step === 3 && valid && !prediction && !predLoading) {
@@ -114,12 +137,12 @@ export default function Page() {
     }
   }, [step, valid, prediction, predLoading, runPrediction])
 
-  // Auto-generate brief when arriving at step 4.
+  // Auto-generate briefs for all stakeholders when arriving at step 4.
   useEffect(() => {
-    if (step === 4 && prediction && !brief && !briefLoading) {
-      void runBrief(activeStakeholder)
+    if (step === 4 && prediction && allBriefs.length === 0 && !briefLoading) {
+      void runAllBriefs()
     }
-  }, [step, prediction, brief, briefLoading, activeStakeholder, runBrief])
+  }, [step, !!prediction, allBriefs.length, briefLoading])
 
   const handleSave = useCallback(() => {
     const features = output ? buildFeatureRows(deal, output) : []
@@ -156,8 +179,8 @@ export default function Page() {
         if (s === 3 && valid && !prediction && !predLoading) {
           void runPrediction()
         }
-        if (s === 4 && prediction && !brief && !briefLoading) {
-          void runBrief(activeStakeholder)
+        if (s === 4 && prediction && allBriefs.length === 0 && !briefLoading) {
+          void runAllBriefs()
         }
       }}
       canStep2={valid}
@@ -167,7 +190,7 @@ export default function Page() {
       {(step === 1 || step === 2) && (
         <SteelLens
           deal={deal}
-          onChange={onChange}
+          onChange={(field, value) => onChange({ [field]: value } as Partial<DealInput>)}
           errors={errors}
           onCalculate={() => setStep(2)}
           output={output}
@@ -195,24 +218,32 @@ export default function Page() {
         />
       )}
 
-      {step === 4 && (
-        <Step4BriefRedesigned
-          deal={deal}
-          output={output}
-          prediction={prediction}
-          brief={brief}
-          loading={briefLoading}
-          error={briefError}
-          activeStakeholder={activeStakeholder}
-          onSelectStakeholder={(s) => {
-            setActiveStakeholder(s)
-          }}
-          onRegenerate={(s) => {
-            setActiveStakeholder(s)
-            void runBrief(s)
-          }}
-          onSave={handleSave}
-        />
+      {step === 4 && output && (
+        <div className="h-full overflow-auto p-6 bg-white">
+          <div className="max-w-6xl mx-auto">
+            {allBriefs.length > 0 && allBriefs[0] ? (
+              <SalesBriefDualView
+                result={allBriefs[0]}
+                stakeholderResults={allBriefs}
+                deal={deal}
+                output={output}
+                predictions={prediction?.predictions || []}
+              />
+            ) : briefLoading ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-green)] mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Generating briefs for all stakeholders...</p>
+                </div>
+              </div>
+            ) : briefError ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-900 font-medium">Error generating briefs</p>
+                <p className="text-red-700 text-sm mt-1">{briefError}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
       )}
     </AppShell>
   )
