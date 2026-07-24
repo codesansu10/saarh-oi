@@ -5,6 +5,7 @@ export type ProvenanceLabel = BriefItemProvenance
 const STYLES: Record<ProvenanceLabel, string> = {
   Verified:
     'border-[var(--brand-green)]/30 bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)]',
+  'Customer-provided': 'border-slate-300/50 bg-slate-50 text-slate-700',
   Calculated: 'border-[var(--steel-grey)]/40 bg-[var(--steel-grey-soft)] text-[var(--steel-grey-dark)]',
   Assumed: 'border-[var(--risk-medium)]/30 bg-[var(--risk-medium-soft)] text-[var(--risk-medium)]',
   Missing: 'border-[var(--risk-high)]/30 bg-[var(--risk-high-soft)] text-[var(--risk-high)]',
@@ -13,6 +14,7 @@ const STYLES: Record<ProvenanceLabel, string> = {
 
 const TITLES: Record<ProvenanceLabel, string> = {
   Verified: 'Supplied by calculator input or uploaded evidence.',
+  'Customer-provided': 'Entered or selected by the customer.',
   Calculated: 'Produced by deterministic formulas.',
   Assumed: 'Scenario assumption.',
   Missing: 'Required but not supplied.',

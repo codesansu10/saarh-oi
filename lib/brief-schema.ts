@@ -7,10 +7,11 @@ import type {
 
 export type BriefItemProvenance =
   | 'Verified'
+  | 'Customer-provided'
+  | 'Calculated'
   | 'Assumed'
   | 'Missing'
   | 'AI-generated'
-  | 'Calculated'
 
 export interface BriefItem {
   text: string
