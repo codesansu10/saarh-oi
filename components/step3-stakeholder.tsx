@@ -14,6 +14,14 @@ const STAKEHOLDER_ICONS: Record<Stakeholder, React.ElementType> = {
   'Product Owner': Zap,
 }
 
+// Role-specific barrier groups (three objections per role)
+const ROLE_BARRIERS: Record<Stakeholder, ObjectionLabel[]> = {
+  Procurement: ['price_objection', 'supply_reliability_objection', 'internal_approval_objection'],
+  Sustainability: ['proof_certification_objection', 'greenwashing_objection', 'low_urgency_objection'],
+  'C-Management': ['internal_approval_objection', 'price_objection', 'low_urgency_objection'],
+  'Product Owner': ['technical_quality_objection', 'supply_reliability_objection', 'internal_approval_objection'],
+}
+
 const EVIDENCE_MAP: Record<Stakeholder, string[]> = {
   Procurement: [
     'Cost impact per vehicle',
@@ -81,7 +89,7 @@ function ReadinessDonut({ score }: { score: number }) {
       </div>
       <p className="mt-1 text-sm font-semibold" style={{ color }}>{risk}</p>
       <p className="text-xs text-muted-foreground">
-        {risk === 'High' ? 'High objection risk' : risk === 'Medium' ? 'Some concerns likely' : 'Low objection risk'}
+        {risk === 'High' ? 'High objection risk' : risk === 'Medium' ? 'Moderate objection risk' : 'Low objection risk'}
       </p>
     </div>
   )
@@ -91,18 +99,24 @@ function ObjectionBar({
   label,
   probability,
   risk,
+  activeStakeholder,
 }: {
   label: ObjectionLabel
   probability: number
   risk: 'Low' | 'Medium' | 'High'
+  activeStakeholder?: Stakeholder
 }) {
   const pct = Math.round(probability * 100)
   const barColor =
     risk === 'High' ? '#b5473f' : risk === 'Medium' ? '#b7791f' : '#4f8a35'
 
+  const displayLabel = activeStakeholder === 'Product Owner' && label === 'technical_quality_objection' 
+    ? 'Technical Qualification / Implementation Approval'
+    : OBJECTION_TITLES[label]
+
   return (
     <div className="flex items-center gap-2 py-1.5">
-      <span className="w-32 shrink-0 text-xs text-foreground">{OBJECTION_TITLES[label]}</span>
+      <span className="w-32 shrink-0 text-xs text-foreground">{displayLabel}</span>
       <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-[var(--surface-subtle)]">
         <div
           className="h-full rounded-full transition-all"
@@ -136,32 +150,40 @@ export function Step3Stakeholder({
   const current: StakeholderPrediction | null =
     prediction?.predictions.find((p) => p.stakeholder === activeStakeholder) ?? null
 
-  // Compute overall readiness score = mean of top-3 objection probabilities
+  // Compute overall objection risk score = mean of role-specific barriers, sorted by score
   const readinessScore = current
     ? (() => {
-        const sorted = [...OBJECTION_LABELS].sort(
-          (a, b) => (current.probabilities[b] ?? 0) - (current.probabilities[a] ?? 0),
-        )
-        const top3 = sorted.slice(0, 3).map((l) => current.probabilities[l] ?? 0)
-        return top3.reduce((a, b) => a + b, 0) / top3.length
+        const roleBarriers = ROLE_BARRIERS[activeStakeholder] || []
+        const barrierScores = roleBarriers.map((l) => current.probabilities[l] ?? 0)
+        return barrierScores.reduce((a, b) => a + b, 0) / barrierScores.length
       })()
     : 0
 
+  // Get role-specific barriers sorted by score
   const orderedObjections = current
-    ? [...OBJECTION_LABELS].sort(
-        (a, b) => (current.probabilities[b] ?? 0) - (current.probabilities[a] ?? 0),
-      )
+    ? (() => {
+        const roleBarriers = ROLE_BARRIERS[activeStakeholder] || []
+        return roleBarriers.sort(
+          (a, b) => (current.probabilities[b] ?? 0) - (current.probabilities[a] ?? 0),
+        )
+      })()
     : []
 
   const stakeholders: Stakeholder[] = ['Procurement', 'Sustainability', 'C-Management', 'Product Owner']
+
+  const getStakeholderDisplayName = (s: Stakeholder) => {
+    if (s === 'C-Management') return 'C-Level'
+    if (s === 'Product Owner') return 'Product Owner'
+    return s
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Page header */}
       <div className="flex items-start justify-between border-b border-border bg-white px-6 py-4">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">Stakeholder Readiness Analysis</h1>
-          <p className="text-sm text-muted-foreground">Select a stakeholder to see their likely concerns and readiness for this deal.</p>
+          <h1 className="text-lg font-semibold text-foreground">Overall Objection Risk</h1>
+          <p className="text-sm text-muted-foreground">Select a stakeholder to see their likely concerns and objection risk for this deal.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -171,14 +193,14 @@ export function Step3Stakeholder({
             className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-foreground hover:border-[var(--brand-green)]/50 transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <RefreshCw className="size-3.5" aria-hidden />}
-            {loading ? 'Running…' : 'Re-run Model'}
+            {loading ? 'Calculating…' : 'Recalculate Assessment'}
           </button>
           <button
             type="button"
             className="flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-foreground hover:border-[var(--brand-green)]/50 transition-colors"
           >
             <Info className="size-3.5" aria-hidden />
-            About the Model
+            About the Assessment
           </button>
         </div>
       </div>
@@ -221,7 +243,7 @@ export function Step3Stakeholder({
                 }`}
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
-                {s}
+                {getStakeholderDisplayName(s)}
               </button>
             )
           })}
@@ -232,7 +254,7 @@ export function Step3Stakeholder({
           {loading && !current ? (
             <div className="flex h-40 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden />
-              Scoring objections across stakeholders…
+              Assessing illustrative role-based barriers…
             </div>
           ) : current ? (
             <div className="space-y-4">
@@ -244,18 +266,19 @@ export function Step3Stakeholder({
                   </p>
                   <div className="flex items-center gap-6">
                     <div className="shrink-0">
-                      <p className="mb-2 text-xs font-medium text-muted-foreground">Stakeholder Readiness</p>
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">Overall Objection Risk</p>
                       <ReadinessDonut score={readinessScore} />
                     </div>
                     <div className="flex-1">
                       <p className="mb-2 text-xs font-semibold text-foreground">Top Objection Risks</p>
                       <div className="space-y-0.5">
-                        {orderedObjections.slice(0, 5).map((label) => (
+                        {orderedObjections.map((label) => (
                           <ObjectionBar
                             key={label}
                             label={label}
                             probability={current.probabilities[label]}
                             risk={current.riskLevels[label]}
+                            activeStakeholder={activeStakeholder}
                           />
                         ))}
                       </div>

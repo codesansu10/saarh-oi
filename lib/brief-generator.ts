@@ -34,10 +34,10 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
 
   const whyLikely: SalesBrief['whyLikely'] = []
   whyLikely.push({
-    text: `${OBJECTION_TITLES[primary]} scores the highest modelled probability (${fmtPercent(
+    text: `${OBJECTION_TITLES[primary]} is the highest illustrative decision barrier for this scenario (illustrative assessment score: ${fmtPercent(
       primaryProb,
       0,
-    )}) for ${stakeholder}.`,
+    )}).`,
     provenance: 'Calculated',
   })
   whyLikely.push({
@@ -56,10 +56,14 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
     provenance: 'Calculated',
   })
   whyLikely.push({
+    text: `Carbon price assumption: €${fmtInt(deal.carbonPrice.value ?? 60)}/t CO₂ (${deal.carbonPrice.source}).`,
+    provenance: 'Assumed',
+  })
+  whyLikely.push({
     text: `Supply reliability is recorded as ${deal.supplyReliability}; certification is ${certLabel(
       deal.certificationStatus,
     )}.`,
-    provenance: 'Verified',
+    provenance: 'Customer-provided',
   })
 
   const conversationStrategy: SalesBrief['conversationStrategy'] = [
@@ -78,11 +82,11 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
       provenance: 'Calculated',
     },
     {
-      text: `Frame emissions as modelled: approx. ${fmtInt(
+      text: `Frame emissions reduction: approx. ${fmtInt(
         out.co2Saved,
-      )} t CO2 avoided vs. baseline (illustrative carbon value ${fmtCurrency(
-        out.indicativeCarbonValue,
-      )}).`,
+      )} t CO2 avoided vs. baseline. Illustrative carbon value calculated using the assumed carbon price of €${fmtInt(
+        out.carbonPrice ?? 60,
+      )}/t CO₂.`,
       provenance: 'Calculated',
     },
   ]
@@ -91,7 +95,7 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
   if (deal.proofStatus.length) {
     evidenceToBring.push({
       text: `Available proof: ${deal.proofStatus.join(', ')}.`,
-      provenance: 'Verified',
+      provenance: 'Customer-provided',
     })
   }
   if (risks.proof_certification_objection !== 'Low' || risks.greenwashing_objection !== 'Low') {
@@ -113,7 +117,7 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
   if (risks.technical_quality_objection !== 'Low') {
     evidenceToBring.push({
       text: `Technical qualification status (${deal.technicalQualificationStatus}) and material datasheets.`,
-      provenance: 'Verified',
+      provenance: 'Customer-provided',
     })
   }
 
@@ -128,7 +132,7 @@ export function generateTemplateBrief(req: BriefRequest): SalesBrief {
     })
   }
   claimsToAvoid.push({
-    text: 'Do not present the synthetic-data prediction as validated customer behaviour.',
+    text: 'Do not present the illustrative role-based assessment as validated customer behaviour or guaranteed likelihood.',
     provenance: 'AI-generated',
   })
 

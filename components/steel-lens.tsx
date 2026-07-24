@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { ChevronDown, AlertCircle, ArrowRight, Users, Copy } from 'lucide-react'
+import { ChevronDown, AlertCircle, ArrowRight, Users, Copy, Info } from 'lucide-react'
 import {
   INDUSTRIES,
   MATERIAL_TYPES,
@@ -30,6 +30,22 @@ function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor: stri
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{children}</p>
+}
+
+function Tooltip({ children, text }: { children: React.ReactNode; text: string }) {
+  const [isVisible, setIsVisible] = useState(false)
+  return (
+    <div className="relative inline-block group">
+      {children}
+      <div
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-xs rounded px-2 py-1 w-max z-50"
+        style={{ maxWidth: '200px', whiteSpace: 'normal' }}
+      >
+        {text}
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+      </div>
+    </div>
+  )
 }
 
 type NumericField =
@@ -181,7 +197,12 @@ export function SteelLens({
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Deal Readiness</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground mb-0.5">Deal Readiness</p>
+                  <Tooltip text="Composite prototype score: proof completeness 35%, certification maturity 25%, supply reliability 20%, and price competitiveness 20%.">
+                    <Info className="size-3.5 text-muted-foreground hover:text-foreground cursor-help" />
+                  </Tooltip>
+                </div>
                 <p className="text-sm font-bold text-blue-700">
                   {output.dealReadiness !== undefined && !isNaN(output.dealReadiness) ? fmtPercent(output.dealReadiness) : 'N/A'}
                 </p>
@@ -339,81 +360,112 @@ export function SteelLens({
         <div className="mb-3">
           <SectionLabel>Deal Inputs</SectionLabel>
           <div className="bg-white rounded-lg border border-border p-2.5">
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <div>
-                <Label htmlFor="volume">Annual Volume (t)</Label>
-                <input
-                  id="volume"
-                  type="number"
-                  value={deal.annualSteelVolumeTonnes}
-                  onChange={(e) => handleNumericChange('annualSteelVolumeTonnes', e)}
-                  className={inputCls}
-                  min="0"
-                  step="1000"
-                />
-              </div>
-              <div>
-                <Label htmlFor="convPrice">Conv. Price (€/t)</Label>
-                <input
-                  id="convPrice"
-                  type="number"
-                  value={deal.conventionalSteelPricePerTonne}
-                  onChange={(e) => handleNumericChange('conventionalSteelPricePerTonne', e)}
-                  className={inputCls}
-                  min="0"
-                  step="10"
-                />
-              </div>
-              <div>
-                <Label htmlFor="greenPrem">Green Premium (€/t)</Label>
-                <input
-                  id="greenPrem"
-                  type="number"
-                  value={deal.greenPremiumPerTonne}
-                  onChange={(e) => handleNumericChange('greenPremiumPerTonne', e)}
-                  className={inputCls}
-                  min="0"
-                  step="5"
-                />
+            {/* VOLUME */}
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-foreground mb-1.5">VOLUME</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="volume">Annual Volume (t)</Label>
+                  <input
+                    id="volume"
+                    type="number"
+                    value={deal.annualSteelVolumeTonnes}
+                    onChange={(e) => handleNumericChange('annualSteelVolumeTonnes', e)}
+                    className={inputCls}
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="units">Product Units per Year</Label>
+                  <input
+                    id="units"
+                    type="number"
+                    value={deal.productUnits}
+                    onChange={(e) => handleNumericChange('productUnits', e)}
+                    className={inputCls}
+                    min="0"
+                    step="1000"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label htmlFor="baseCo2">Baseline CO₂ (t/t)</Label>
-                <input
-                  id="baseCo2"
-                  type="number"
-                  value={deal.baselineCo2Intensity}
-                  onChange={(e) => handleNumericChange('baselineCo2Intensity', e)}
-                  className={inputCls}
-                  min="0"
-                  step="0.1"
-                />
+            {/* PRICING */}
+            <div className="mb-3">
+              <p className="text-xs font-semibold text-foreground mb-1.5">PRICING</p>
+              <div className="grid grid-cols-5 gap-1 items-end">
+                <div>
+                  <Label htmlFor="convPrice">Conventional Price (€/t)</Label>
+                  <input
+                    id="convPrice"
+                    type="number"
+                    value={deal.conventionalSteelPricePerTonne}
+                    onChange={(e) => handleNumericChange('conventionalSteelPricePerTonne', e)}
+                    className={inputCls}
+                    min="0"
+                    step="10"
+                  />
+                </div>
+                <div className="flex justify-center pb-1">
+                  <span className="text-xs font-semibold text-muted-foreground">+</span>
+                </div>
+                <div>
+                  <Label htmlFor="greenPrem">Green Steel Premium (€/t)</Label>
+                  <input
+                    id="greenPrem"
+                    type="number"
+                    value={deal.greenPremiumPerTonne}
+                    onChange={(e) => handleNumericChange('greenPremiumPerTonne', e)}
+                    className={inputCls}
+                    min="0"
+                    step="5"
+                  />
+                </div>
+                <div className="flex justify-center pb-1">
+                  <span className="text-xs font-semibold text-muted-foreground">=</span>
+                </div>
+                <div>
+                  <Label htmlFor="totalPrice">Total Green Steel Price (€/t)</Label>
+                  <input
+                    id="totalPrice"
+                    type="number"
+                    value={deal.conventionalSteelPricePerTonne + deal.greenPremiumPerTonne}
+                    readOnly
+                    className={`${inputCls} bg-slate-50 cursor-not-allowed`}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="greenCo2">Green Steel CO₂ (t/t)</Label>
-                <input
-                  id="greenCo2"
-                  type="number"
-                  value={deal.greenSteelCo2Intensity}
-                  onChange={(e) => handleNumericChange('greenSteelCo2Intensity', e)}
-                  className={inputCls}
-                  min="0"
-                  step="0.1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="units">Product Units/y</Label>
-                <input
-                  id="units"
-                  type="number"
-                  value={deal.productUnits}
-                  onChange={(e) => handleNumericChange('productUnits', e)}
-                  className={inputCls}
-                  min="0"
-                  step="1000"
-                />
+            </div>
+
+            {/* CARBON IMPACT */}
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">CARBON IMPACT</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="baseCo2">Baseline CO₂ (t/t)</Label>
+                  <input
+                    id="baseCo2"
+                    type="number"
+                    value={deal.baselineCo2Intensity}
+                    onChange={(e) => handleNumericChange('baselineCo2Intensity', e)}
+                    className={inputCls}
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="greenCo2">Green Steel CO₂ (t/t)</Label>
+                  <input
+                    id="greenCo2"
+                    type="number"
+                    value={deal.greenSteelCo2Intensity}
+                    onChange={(e) => handleNumericChange('greenSteelCo2Intensity', e)}
+                    className={inputCls}
+                    min="0"
+                    step="0.1"
+                  />
+                </div>
               </div>
             </div>
           </div>

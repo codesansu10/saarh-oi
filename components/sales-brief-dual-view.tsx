@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   MessageSquareQuote,
   Lightbulb,
@@ -89,6 +89,53 @@ function BenefitCard({
   );
 }
 
+// PDF-only header block. Hidden on screen (`hidden`) and revealed by the PDF
+// capture in the cloned document. Carries the requested Saarstahl logo.
+function PdfOnlyHeader({
+  docTitle,
+  confidential,
+  meta,
+}: {
+  docTitle: string;
+  confidential?: string;
+  meta: { label: string; value: string }[];
+}) {
+  return (
+    <div className="pdf-only hidden">
+      <div className="flex items-start justify-between gap-6">
+        {/* Logo source is injected as a data URL during capture; keep the aspect ratio */}
+        <img
+          data-pdf-logo
+          src="/api/pdf-logo"
+          alt="Saarstahl"
+          crossOrigin="anonymous"
+          style={{ width: '190px', height: 'auto' }}
+        />
+        <div className="text-right">
+          <p className="text-xl font-bold text-foreground">{docTitle}</p>
+          {confidential ? (
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--risk-high)]">
+              {confidential}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      {/* Thin divider below the logo, then the document meta */}
+      <div className="mt-4 border-t-2 border-[var(--brand-green)] pt-3">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+          {meta.map((m) => (
+            <div key={m.label} className="flex justify-between gap-4 text-sm">
+              <span className="text-muted-foreground">{m.label}</span>
+              <span className="font-medium text-foreground">{m.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 border-b border-border" />
+    </div>
+  );
+}
+
 function InternalView({
   stakeholderResults,
   deal,
@@ -100,49 +147,75 @@ function InternalView({
 }) {
   const [selectedStakeholder, setSelectedStakeholder] = useState<number>(0);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const activeResult = stakeholderResults[selectedStakeholder];
 
   const handleExportPDF = async () => {
+    if (!pdfRef.current || !activeResult || exportingPDF) return;
+    setExportError(null);
     try {
       setExportingPDF(true);
-      await exportInternalViewPDF(stakeholderResults, selectedStakeholder, deal, output);
+      // Export ONLY the currently selected stakeholder's rendered brief.
+      await exportInternalViewPDF(pdfRef.current, deal, output, activeResult.brief.stakeholder);
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error('[v0] Error exporting internal PDF:', error);
+      setExportError('The PDF could not be generated. Please try again.');
     } finally {
       setExportingPDF(false);
     }
   };
 
+  const scenarioRows: { label: string; value: string }[] = [
+    { label: 'Annual volume', value: `${(deal.annualSteelVolumeTonnes || 0).toLocaleString()} t` },
+    { label: 'Premium per tonne', value: `€${(deal.greenPremiumPerTonne || 0).toLocaleString()}` },
+    { label: 'Total annual premium', value: `€${(output.totalPremium || 0).toLocaleString()}` },
+    { label: 'Premium per product', value: `€${(output.premiumPerProduct || 0).toLocaleString()}` },
+    { label: 'Premium percentage', value: `${(output.premiumPercentage || 0).toFixed(1)}%` },
+    { label: 'Annual CO₂ reduction', value: `${(output.co2Saved || 0).toLocaleString()} t CO₂` },
+    { label: 'Illustrative carbon value', value: `€${(output.indicativeCarbonValue || 0).toLocaleString()}` },
+    { label: 'Proof score', value: `${output.proofScore ?? '—'}` },
+    { label: 'Certification status', value: deal.certificationStatus || '—' },
+    { label: 'Supply reliability', value: deal.supplyReliability || '—' },
+    { label: 'Technical qualification', value: deal.technicalQualificationStatus || '—' },
+    { label: 'Delivery timeline', value: deal.deliveryTimeline || '—' },
+  ];
+
   return (
     <div className="space-y-4">
-      {/* Header with Export Button */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Header with Export Button (excluded from PDF capture) */}
+      <div data-pdf-ignore="true" className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Internal Sales Brief</h2>
           <p className="text-sm text-muted-foreground mt-1">Detailed stakeholder-by-stakeholder analysis for your sales team</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          disabled={exportingPDF}
-          className="flex items-center gap-2 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {exportingPDF ? (
-            <>
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Generating PDF...
-            </>
-          ) : (
-            <>
-              <Download className="size-4" aria-hidden />
-              Export to PDF
-            </>
-          )}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+            className="flex items-center gap-2 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {exportingPDF ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="size-4" aria-hidden />
+                Export Current Stakeholder PDF
+              </>
+            )}
+          </button>
+          {exportError ? (
+            <p className="text-xs text-[var(--risk-high)]">{exportError}</p>
+          ) : null}
+        </div>
       </div>
 
-      {/* Stakeholder Selector */}
-      <div className="rounded-lg border border-border bg-surface p-4">
+      {/* Stakeholder Selector (excluded from PDF capture) */}
+      <div data-pdf-ignore="true" className="rounded-lg border border-border bg-surface p-4">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-3">
           Select Stakeholder to View Detailed Brief
         </p>
@@ -163,9 +236,22 @@ function InternalView({
         </div>
       </div>
 
-      {/* Active Stakeholder Brief */}
+      {/* Active Stakeholder Brief (captured for the PDF) */}
       {activeResult && (
-        <div className="space-y-4">
+        <div ref={pdfRef} className="pdf-export-content space-y-4 bg-surface p-2">
+          {/* PDF-only header with the requested Saarstahl logo */}
+          <PdfOnlyHeader
+            docTitle="Internal Sales View"
+            confidential="Internal Use Only"
+            meta={[
+              { label: 'Company', value: deal.companyName || '—' },
+              { label: 'Deal ID', value: deal.dealId || '—' },
+              { label: 'Product / Application', value: deal.productName || '—' },
+              { label: 'Selected stakeholder', value: activeResult.brief.stakeholder },
+              { label: 'Export date', value: new Date().toLocaleDateString('en-GB') },
+            ]}
+          />
+
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--brand-green)]/30 bg-[var(--brand-green-soft)] px-4 py-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-[var(--brand-green-dark)]">
@@ -183,7 +269,7 @@ function InternalView({
               }`}
             >
               <Sparkles className="size-3.5" aria-hidden />
-              {activeResult.mode === 'llm' ? 'LLM mode' : 'Template mode'}
+              {activeResult.mode === 'llm' ? 'AI-assisted wording' : 'Rule-based prototype'}
             </span>
           </div>
 
@@ -238,6 +324,30 @@ function InternalView({
               {activeResult.brief.recommendedNextStep}
             </p>
           </div>
+
+          {/* PDF-only: scenario context & commercial KPIs */}
+          <div className="pdf-only hidden rounded-xl border border-border bg-surface p-4">
+            <h4 className="mb-3 text-sm font-semibold text-foreground">
+              Scenario Context &amp; Commercial KPIs
+            </h4>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+              {scenarioRows.map((row) => (
+                <div key={row.label} className="flex justify-between gap-4 text-sm">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className="font-medium text-foreground">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* PDF-only: assessment disclaimer */}
+          <div className="pdf-only hidden rounded-lg border border-border bg-surface-subtle p-3">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              This internal prototype brief is based on an illustrative role-based assessment and the
+              entered scenario data. It is intended for sales preparation and does not represent
+              validated customer behaviour, guaranteed commercial outcomes or legal compliance advice.
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -252,16 +362,18 @@ function CustomerView({
   output: BusinessValueOutput;
 }) {
   const [exportingPDF, setExportingPDF] = useState(false);
-  const paybackMonths = Math.round((output.totalPremium || 0) / ((output.indicativeCarbonValue || 0) / 12));
-  const annualCarbonValue = output.indicativeCarbonValue || 0;
-  const costPremium = output.totalPremium || 0;
+  const [exportError, setExportError] = useState<string | null>(null);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleExportPDF = async () => {
+    if (!pdfRef.current || exportingPDF) return;
+    setExportError(null);
     try {
       setExportingPDF(true);
-      await exportCustomerViewPDF(deal, output);
+      await exportCustomerViewPDF(pdfRef.current, deal, output);
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      console.error('[v0] Error exporting customer PDF:', error);
+      setExportError('The PDF could not be generated. Please try again.');
     } finally {
       setExportingPDF(false);
     }
@@ -269,36 +381,54 @@ function CustomerView({
 
   return (
     <div className="space-y-6">
-      {/* Header with Export Button */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Header with Export Button (excluded from PDF capture) */}
+      <div data-pdf-ignore="true" className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Green Steel Business Case</h2>
           <p className="text-sm text-muted-foreground mt-1">Discover why switching to green steel benefits your business</p>
         </div>
-        <button
-          onClick={handleExportPDF}
-          disabled={exportingPDF}
-          className="flex items-center gap-2 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {exportingPDF ? (
-            <>
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Generating PDF...
-            </>
-          ) : (
-            <>
-              <Download className="size-4" aria-hidden />
-              Export to PDF
-            </>
-          )}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+            className="flex items-center gap-2 rounded-lg bg-[var(--brand-green)] px-4 py-2 text-white hover:bg-[var(--brand-green-dark)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {exportingPDF ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="size-4" aria-hidden />
+                Export Customer Summary PDF
+              </>
+            )}
+          </button>
+          {exportError ? (
+            <p className="text-xs text-[var(--risk-high)]">{exportError}</p>
+          ) : null}
+        </div>
       </div>
+
+      {/* Captured area for the PDF */}
+      <div ref={pdfRef} className="pdf-export-content space-y-6 bg-surface p-2">
+        {/* PDF-only header with the requested Saarstahl logo */}
+        <PdfOnlyHeader
+          docTitle="Customer Side Summary"
+          meta={[
+            { label: 'Company', value: deal.companyName || '—' },
+            { label: 'Deal ID', value: deal.dealId || '—' },
+            { label: 'Product / Application', value: deal.productName || '—' },
+            { label: 'Export date', value: new Date().toLocaleDateString('en-GB') },
+          ]}
+        />
 
       {/* Executive Summary for Customer */}
       <div className="rounded-xl border border-[var(--brand-green)]/30 bg-[var(--brand-green-soft)] p-6">
         <h3 className="text-xl font-bold text-foreground mb-2">Why Switch to Green Steel?</h3>
         <p className="text-base text-foreground leading-relaxed">
-          Join forward-thinking manufacturers transitioning to certified green steel. Achieve your sustainability goals while protecting your supply chain and enhancing your brand value.
+          Explore the potential of green steel sourcing. This prototype allows you to estimate carbon reduction impacts and assess illustrative financial implications based on your specific requirements.
         </p>
       </div>
 
@@ -307,24 +437,24 @@ function CustomerView({
         <h3 className="text-lg font-semibold text-foreground mb-4">Your Key Benefits</h3>
         <div className="grid gap-4 md:grid-cols-2">
           <BenefitCard
-            icon={TrendingUp}
-            title="Financial Payback"
-            description={`Green premium fully offset through carbon credits within ${paybackMonths} months. After that, pure margin improvement.`}
-          />
-          <BenefitCard
             icon={Award}
-            title="ESG Leadership"
-            description="Publicly demonstrate Scope 3 carbon reduction aligned with net-zero commitments. Strengthen investor relations and customer trust."
+            title="Estimated Carbon Reduction"
+            description={`Potential annual upstream Scope 3 emissions reduction of approximately ${(output.co2Saved || 0).toLocaleString()} t CO₂ compared with baseline.`}
           />
           <BenefitCard
             icon={Zap}
-            title="Zero Production Disruption"
-            description="Certified compatible with existing production. Seamless integration with proven supply chain support and technical training included."
+            title="Operational Considerations"
+            description="Production compatibility requires validation before implementation. Technical qualification status is pending confirmation."
           />
           <BenefitCard
             icon={Users}
-            title="Supply Security"
-            description="Lock in 5-year contract protecting you from future price volatility and supply disruptions. Secure your competitive advantage."
+            title="Supply Assessment"
+            description={`Current supply reliability assessment: ${deal.supplyReliability || '—'}. Final contractual commitments remain subject to confirmation.`}
+          />
+          <BenefitCard
+            icon={TrendingUp}
+            title="Illustrative Carbon Value"
+            description={`Approximately €${(output.indicativeCarbonValue || 0).toLocaleString()} per year based on assumed carbon price. This is an illustrative exposure value, not guaranteed savings.`}
           />
         </div>
       </div>
@@ -336,115 +466,122 @@ function CustomerView({
           <div className="text-center p-3 rounded-lg bg-surface-subtle">
             <p className="text-xs text-muted-foreground mb-1">Annual Volume</p>
             <p className="text-xl font-bold text-foreground">
-              {(deal.annualVolume || 0).toLocaleString()} t
+              {(deal.annualSteelVolumeTonnes || 0).toLocaleString()} t
             </p>
           </div>
           <div className="text-center p-3 rounded-lg bg-blue-50">
             <p className="text-xs text-muted-foreground mb-1">Premium per Tonne</p>
             <p className="text-xl font-bold text-blue-700">
-              €{Math.round(costPremium / (deal.annualVolume || 1)).toLocaleString()}
+              €{(deal.greenPremiumPerTonne || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-center p-3 rounded-lg bg-green-50">
-            <p className="text-xs text-muted-foreground mb-1">Annual Carbon Value</p>
+            <p className="text-xs text-muted-foreground mb-1">Total Annual Premium</p>
             <p className="text-xl font-bold text-green-700">
-              €{Math.round(annualCarbonValue).toLocaleString()}
+              €{(output.totalPremium || 0).toLocaleString()}
+            </p>
+          </div>
+          <div className="text-center p-3 rounded-lg bg-emerald-50">
+            <p className="text-xs text-muted-foreground mb-1">Illustrative Annual Carbon Value</p>
+            <p className="text-xl font-bold text-emerald-700">
+              €{(output.indicativeCarbonValue || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-center p-3 rounded-lg bg-amber-50">
-            <p className="text-xs text-muted-foreground mb-1">CO₂ Reduction Yearly</p>
+            <p className="text-xs text-muted-foreground mb-1">Annual CO₂ Reduction</p>
             <p className="text-xl font-bold text-amber-700">
-              {Math.round(output.co2Saved || 0).toLocaleString()} t
+              {(output.co2Saved || 0).toLocaleString()} t CO₂
             </p>
           </div>
-          <div className="text-center p-3 rounded-lg bg-purple-50">
-            <p className="text-xs text-muted-foreground mb-1">Payback Period</p>
-            <p className="text-xl font-bold text-purple-700">{paybackMonths} months</p>
-          </div>
           <div className="text-center p-3 rounded-lg bg-[var(--brand-green-soft)]">
-            <p className="text-xs text-muted-foreground mb-1">Supply Rating</p>
+            <p className="text-xs text-muted-foreground mb-1">Supply Reliability</p>
             <p className="text-xl font-bold text-[var(--brand-green-dark)]">{deal.supplyReliability}</p>
           </div>
         </div>
       </div>
 
-      {/* Break-Even Analysis Graph */}
+      {/* Premium and Carbon Value Comparison Graph */}
       <div className="rounded-xl border border-border bg-surface p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Break-Even Analysis</h3>
-        <BreakEvenChart
-          monthlyPremium={(costPremium || 0) / 12}
-          monthlyReturn={(annualCarbonValue || 0) / 12}
-          paybackMonth={paybackMonths}
+        <h3 className="text-lg font-semibold text-foreground mb-4">Illustrative Carbon-Value Offset of One Year&apos;s Green Premium</h3>
+        <PremiumCarbonComparisonChart
+          monthlyPremium={(output.totalPremium || 0) / 12}
+          monthlyCarbonValue={(output.indicativeCarbonValue || 0) / 12}
+          totalPremium={output.totalPremium || 0}
+          indicativeCarbonValue={output.indicativeCarbonValue || 0}
         />
       </div>
 
       {/* Sustainability Impact */}
       <div className="rounded-xl border border-border bg-surface p-6">
-        <h3 className="text-lg font-semibold text-foreground mb-4">Sustainability Impact</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-4">Sustainability Profile</h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <CheckCircle className="size-5 text-[var(--brand-green)] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Scope 1 & 2 Carbon Neutrality</p>
-              <p className="text-sm text-muted-foreground">Steel procurement now contributes to your net-zero targets.</p>
+              <p className="font-medium text-foreground">Scope 3 Emissions Reduction Potential</p>
+              <p className="text-sm text-muted-foreground">Potential contribution to reducing upstream purchased-goods emissions.</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <CheckCircle className="size-5 text-[var(--brand-green)] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Third-Party Certified</p>
-              <p className="text-sm text-muted-foreground">ISCC+ certification ensures authenticity and compliance with regulatory standards.</p>
+              <p className="font-medium text-foreground">Certification Status</p>
+              <p className="text-sm text-muted-foreground">{`Current status: ${deal.certificationStatus || '—'}. Final evidence must be confirmed before customer-facing claims.`}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <CheckCircle className="size-5 text-[var(--brand-green)] flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Stakeholder Engagement</p>
-              <p className="text-sm text-muted-foreground">Share your commitment with investors, customers, and supply chain partners.</p>
+              <p className="font-medium text-foreground">Proof of Performance</p>
+              <p className="text-sm text-muted-foreground">{`Currently ${deal.proofItemsAvailable || 0} of ${deal.proofItemsRequired || 0} proof items available.`}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Competitive Advantages */}
+      {/* About This Assessment */}
       <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="size-5 text-[var(--brand-green)]" />
-          <h3 className="text-lg font-semibold text-foreground">Why Companies Like Yours Are Switching</h3>
+          <h3 className="text-lg font-semibold text-foreground">About This Assessment</h3>
         </div>
         <ul className="space-y-2 text-sm text-foreground">
           <li className="flex gap-2">
             <span className="text-[var(--brand-green)]">→</span>
-            <span>Your premium customers increasingly demand sustainable sourcing</span>
+            <span>Values shown are based on entered deal parameters and estimated carbon pricing</span>
           </li>
           <li className="flex gap-2">
             <span className="text-[var(--brand-green)]">→</span>
-            <span>Regulatory pressure on Scope 3 emissions is accelerating globally</span>
+            <span>Carbon impact estimates represent upstream Scope 3 reduction potential</span>
           </li>
           <li className="flex gap-2">
             <span className="text-[var(--brand-green)]">→</span>
-            <span>First-movers in your industry gain competitive market positioning</span>
+            <span>Technical compatibility and final certification status require validation</span>
           </li>
           <li className="flex gap-2">
             <span className="text-[var(--brand-green)]">→</span>
-            <span>Supply chain security with multi-year contracts protects margins</span>
+            <span>Supply, contractual, and regulatory terms are subject to negotiation and confirmation</span>
           </li>
           <li className="flex gap-2">
             <span className="text-[var(--brand-green)]">→</span>
-            <span>Carbon credits provide immediate financial offset and upside potential</span>
+            <span>This prototype provides illustrative projections for discussion purposes only</span>
           </li>
         </ul>
       </div>
 
       {/* CTA Section */}
       <div className="rounded-xl border border-[var(--brand-green)] bg-[var(--brand-green-soft)] p-6 text-center">
-        <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Make the Switch?</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">Next Steps</h3>
         <p className="text-foreground mb-4">
-          Let&apos;s discuss your specific requirements and create a customized transition plan.
+          This assessment is a prototype based on entered parameters. To proceed, discuss technical qualification, certification requirements, and contractual terms with our team.
         </p>
-        <button className="bg-[var(--brand-green)] text-white px-6 py-2 rounded-lg font-medium hover:bg-[var(--brand-green-dark)] transition-colors">
+        <button
+          data-pdf-ignore="true"
+          className="bg-[var(--brand-green)] text-white px-6 py-2 rounded-lg font-medium hover:bg-[var(--brand-green-dark)] transition-colors"
+        >
           Schedule a Consultation
         </button>
+      </div>
       </div>
     </div>
   );
@@ -462,47 +599,64 @@ function CheckCircle({ className }: { className?: string }) {
   );
 }
 
-function BreakEvenChart({
+function PremiumCarbonComparisonChart({
   monthlyPremium,
-  monthlyReturn,
-  paybackMonth,
+  monthlyCarbonValue,
+  totalPremium,
+  indicativeCarbonValue,
 }: {
   monthlyPremium: number;
-  monthlyReturn: number;
-  paybackMonth: number;
+  monthlyCarbonValue: number;
+  totalPremium: number;
+  indicativeCarbonValue: number;
 }) {
   // Generate data points for 36 months
   const months = Array.from({ length: 37 }, (_, i) => i);
+  
+  // Chart data: one year premium (constant red line), cumulative carbon value (green line)
   const chartData = months.map((month) => ({
     month,
-    cumulativeCost: month * monthlyPremium,
-    cumulativeReturn: month * monthlyReturn,
+    oneYearPremium: totalPremium, // Constant horizontal line
+    cumulativeCarbonValue: (indicativeCarbonValue / 12) * month,
   }));
 
-  // Find max value for scaling
-  const maxValue = Math.max(
-    ...chartData.map((d) => Math.max(d.cumulativeCost, d.cumulativeReturn)),
-  );
+  // Calculate offset month where cumulative carbon value equals one year premium
+  let offsetMonth: number | null = null;
+  let showOffset = false;
+  
+  if (indicativeCarbonValue > 0 && monthlyCarbonValue > 0) {
+    offsetMonth = totalPremium / monthlyCarbonValue;
+    showOffset = isFinite(offsetMonth) && offsetMonth >= 0 && offsetMonth <= 36;
+  }
+
+  // Find max value for scaling - use the larger of the two values with 10% buffer
+  const carbonValueAt36Months = (indicativeCarbonValue / 12) * 36;
+  const maxChartValue = Math.max(totalPremium, carbonValueAt36Months) * 1.1;
+  const maxValue = maxChartValue;
+
+  // Format large values to millions
+  const formatYAxisValue = (val: number) => {
+    if (val >= 1000000) {
+      return `€${(val / 1000000).toFixed(1)}m`;
+    }
+    return `€${(val / 1000).toFixed(0)}k`;
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 text-sm mb-4">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-          <span className="text-muted-foreground">Green Premium Cost</span>
+          <span className="text-muted-foreground">One Year&apos;s Green Premium</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
-          <span className="text-muted-foreground">Carbon Credit Returns</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-6 border-l-2 border-purple-600" />
-          <span className="text-muted-foreground">Break-even Point</span>
+          <span className="text-muted-foreground">Cumulative Illustrative Carbon Value</span>
         </div>
       </div>
 
       <svg
-        viewBox="0 0 600 300"
+        viewBox="0 0 600 320"
         className="w-full border border-border rounded-lg bg-surface-subtle p-4"
         style={{ minHeight: '300px' }}
       >
@@ -551,15 +705,37 @@ function BreakEvenChart({
           );
         })}
 
-        {/* Y-axis label */}
-        <text x="20" y="30" fontSize="12" fill="currentColor" opacity="0.7">
-          €
+        {/* X-axis title */}
+        <text
+          x="320"
+          y="305"
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="600"
+          fill="currentColor"
+          opacity="0.8"
+        >
+          Months
         </text>
 
-        {/* Y-axis values */}
-        {Array.from({ length: 5 }).map((_, i) => {
-          const value = (i * maxValue) / 4;
-          const y = 50 + (i * 200) / 4;
+        {/* Y-axis title (rotated) */}
+        <text
+          x="16"
+          y="150"
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="600"
+          fill="currentColor"
+          opacity="0.8"
+          transform="rotate(-90 16 150)"
+        >
+          Value (€ millions)
+        </text>
+
+        {/* Y-axis values - from 0 at bottom to max at top */}
+        {Array.from({ length: 4 }).map((_, i) => {
+          const value = ((i + 1) * maxValue) / 4;
+          const y = 250 - ((i + 1) * 200) / 4;
           return (
             <text
               key={`y-label-${i}`}
@@ -570,7 +746,7 @@ function BreakEvenChart({
               fill="currentColor"
               opacity="0.7"
             >
-              {(value / 1000).toFixed(0)}k
+              {formatYAxisValue(value)}
             </text>
           );
         })}
@@ -595,26 +771,22 @@ function BreakEvenChart({
           opacity="0.3"
         />
 
-        {/* Cost line (red) */}
-        <polyline
-          points={chartData
-            .map((d) => {
-              const x = 60 + (d.month / 36) * 520;
-              const y = 250 - (d.cumulativeCost / maxValue) * 200;
-              return `${x},${y}`;
-            })
-            .join(' ')}
-          fill="none"
+        {/* One Year Premium line (red, horizontal) */}
+        <line
+          x1="60"
+          y1={250 - (totalPremium / maxValue) * 200}
+          x2="580"
+          y2={250 - (totalPremium / maxValue) * 200}
           stroke="#ef4444"
           strokeWidth="2"
         />
 
-        {/* Return line (green) */}
+        {/* Cumulative Carbon Value line (green) */}
         <polyline
           points={chartData
             .map((d) => {
               const x = 60 + (d.month / 36) * 520;
-              const y = 250 - (d.cumulativeReturn / maxValue) * 200;
+              const y = 250 - (d.cumulativeCarbonValue / maxValue) * 200;
               return `${x},${y}`;
             })
             .join(' ')}
@@ -623,32 +795,50 @@ function BreakEvenChart({
           strokeWidth="2"
         />
 
-        {/* Break-even line (vertical) */}
-        {paybackMonth > 0 && paybackMonth <= 36 && (
+        {/* Offset point and vertical line */}
+        {showOffset && offsetMonth !== null && (
           <>
+            {/* Vertical dashed line at offset month */}
             <line
-              x1={60 + (paybackMonth / 36) * 520}
+              x1={60 + (offsetMonth / 36) * 520}
               y1="50"
-              x2={60 + (paybackMonth / 36) * 520}
+              x2={60 + (offsetMonth / 36) * 520}
               y2="250"
               stroke="#a855f7"
               strokeWidth="2"
               strokeDasharray="5,5"
             />
+            
+            {/* Intersection marker */}
             <circle
-              cx={60 + (paybackMonth / 36) * 520}
-              cy={250 - ((paybackMonth * monthlyReturn) / maxValue) * 200}
+              cx={60 + (offsetMonth / 36) * 520}
+              cy={250 - (totalPremium / maxValue) * 200}
               r="4"
               fill="#a855f7"
+              stroke="white"
+              strokeWidth="2"
             />
+            
+            {/* Offset label */}
+            <text
+              x={60 + (offsetMonth / 36) * 520}
+              y={250 - (totalPremium / maxValue) * 200 - 15}
+              textAnchor="middle"
+              fontSize="11"
+              fill="#a855f7"
+              fontWeight="bold"
+            >
+              Illustrative offset: ≈ {offsetMonth.toFixed(1)} months
+            </text>
           </>
         )}
       </svg>
 
       <div className="text-sm text-foreground bg-surface-subtle p-3 rounded-lg">
-        <p className="font-semibold mb-1">Break-even in {paybackMonth} months</p>
         <p className="text-muted-foreground">
-          After {paybackMonth} months, carbon credits fully offset the green steel premium. Thereafter, carbon benefits represent pure margin improvement.
+          {showOffset && offsetMonth !== null
+            ? 'This illustrative offset point shows when cumulative modelled carbon value equals one year of green-steel premium. It is not a full investment break-even, guaranteed saving, carbon-credit income, or confirmation that recurring annual premiums will be fully offset.'
+            : 'The illustrative carbon value does not equal one year\'s green premium within the displayed 36-month period.'}
         </p>
       </div>
     </div>
@@ -676,7 +866,7 @@ export function SalesBriefDualView({
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Internal View
+          Internal Sales View
         </button>
         <button
           onClick={() => setActiveView('customer')}
@@ -686,7 +876,7 @@ export function SalesBriefDualView({
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Customer View
+          Customer Side Summary
         </button>
       </div>
 
@@ -705,3 +895,4 @@ export function SalesBriefDualView({
     </div>
   );
 }
+

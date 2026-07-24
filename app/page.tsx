@@ -71,6 +71,7 @@ export default function Page() {
     setDeal((d) => ({ ...d, ...patch }))
     setPrediction(null)
     setBrief(null)
+    setAllBriefs([])
     setPredError(null)
   }, [])
 
